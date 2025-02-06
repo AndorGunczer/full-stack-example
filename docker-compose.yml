@@ -1,0 +1,58 @@
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/data/mariadb
+
+services:
+  frontend:
+    container_name: mr_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    networks:
+      static-network:
+        ipv4_address: 192.168.10.2
+    ports:
+      - 8080:5173
+    # volumes:
+    #   - ${PWD}/frontend/react-app:/react-app
+  backend:
+    container_name: mr_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    networks:
+      static-network:
+        ipv4_address: 192.168.10.3
+    ports:
+      - 3000:3000
+    # volumes:
+    #   - ${PWD}/backend/app:/app
+  mariadb:
+    container_name: mr_datenbank
+    build:
+      context: ./datenbank
+      dockerfile: Dockerfile
+    environment:
+      MYSQL_ROOT_HOST: '%'
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+    secrets:
+      - db_root_password
+    expose:
+      - "3306"
+    networks:
+      static-network:
+        ipv4_address: 192.168.10.4
+
+networks:
+  static-network:
+      ipam:
+        config:
+          - subnet: 192.168.10.0/24
+
+secrets:
+  db_root_password:
+    file: ./secrets/db_root_password.txt
